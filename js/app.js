@@ -8,7 +8,7 @@ const fsclientsecret = "N0TGF05SMGOU0ALYEXKVLYE2JTUAHWG513N3F4ZMQFHGB21L";
 
 // customized map style, inspired from Snazzy Maps
 // from: https://snazzymaps.com/style/38/shades-of-grey
-// adding orange geometry to all transits, as my goal for after moving to 
+// adding orange geometry to all transits, as my goal for after moving to
 // Charlotte is to use public transport and the airport
 let mapsStyle = [
     {
@@ -181,7 +181,7 @@ let mapsStyle = [
 
 function ViewModel() {
     var self = this;
-    
+
     // initialize in charlotte area
     var map;
     var markers = [];
@@ -193,37 +193,36 @@ function ViewModel() {
     // sessionStorage.clear()
 
     // for search query in POI list (side bar)
-    self.query = ko.observable(''); 
-    
+    self.query = ko.observable('');
+
     // map my model to poiArray to work with Knockout observable
     this.poiArray = ko.observableArray([]);
     poiList.forEach(d => self.poiArray.push(d));
-    
+
     // console.log(self.poiArray());
-    
+
     // filter inputs section
     self.filteredPOI = ko.computed(function () {
         var search = self.query().toLowerCase();
         var result = ko.observableArray([]);
 
         if (!search) {
-            markers.forEach(i => i.setVisible(true))
+            markers.forEach(i => i.setVisible(true));
             result = self.poiArray();
         }
         else {
+            largeInfowindow.close()
             result = ko.utils.arrayFilter(self.poiArray(), function(item) {
                 for (var i = 0; i < markers.length; i++) {
                     markers[i].setVisible(false);
                     if (markers[i].title.toLowerCase().indexOf(search) !== -1){
-                        markers[i].setVisible(true);      
+                        markers[i].setVisible(true);
                     }
-                } 
+                }
 
                 return item.name.toLowerCase().indexOf(search) !== -1;
             });
         }
-
-        
 
         return result;
     });
@@ -232,25 +231,25 @@ function ViewModel() {
 
 
 
-    // create markers and push to observable array 
+    // create markers and push to observable array
     // draw from examples in Udacity 864 Window Shopping
     var largeInfowindow = new google.maps.InfoWindow();
-    
+
     self.markerMaker = function(poi) {
         var _marker = {};
 
         _marker.position = {"lat": poi.lat, "lng": poi.lng};
 
         _marker.title = poi.name;
-        _marker.category = poi.category; 
+        _marker.category = poi.category;
         _marker.map = map;
         _marker.fsid = poi.fsid;
         _marker.animation = google.maps.Animation.DROP;
 
         gmarker = new google.maps.Marker(_marker);
-        
+
         return gmarker;
-    }
+    };
 
     // maps section
 
@@ -264,12 +263,12 @@ function ViewModel() {
     self.poiArray().forEach(d => {
         var m = self.markerMaker(d);
         // console.log(m);
-        markers.push(m)
+        markers.push(m);
         m.addListener('click', function() {
             self.populateInfoWindow(this, largeInfowindow)
         });
 
-        
+
     });
 
     console.log(markers);
@@ -277,12 +276,12 @@ function ViewModel() {
     self.setLocation = function(clickedPOI){
         // console.log(this);
         for (var i = 0; i < markers.length; i++) {
-            markers[i].setVisible(false);
+            // markers[i].setVisible(false);
             if (markers[i].title == clickedPOI.name){
                 markers[i].setVisible(true);
                 self.populateInfoWindow(markers[i], largeInfowindow);
             }
-        } 
+        }
     };
 
 
@@ -303,10 +302,10 @@ function ViewModel() {
             console.log(marker);
 
             // make foursquare part
-            const fsurl = "https://api.foursquare.com/v2/venues/"; 
+            const fsurl = "https://api.foursquare.com/v2/venues/";
             var poiid = marker.fsid
             console.log(`${fsurl}${poiid}?client_id=${fsclientid}&client_secret=${fsclientsecret}&v=20180815`);
-            
+
             $.ajax(
                 {
                     url: `${fsurl}${poiid}?client_id=${fsclientid}&client_secret=${fsclientsecret}&v=20180815`,
@@ -317,17 +316,17 @@ function ViewModel() {
 
                     venue_res = d.response.venue;
                     console.log(venue_res);
-                    
+
                     // infowindow_html = `this is coming from inside populateInfoWindow`
                     infowindow_html = `<h3>${venue_res.name}</h3>
                                        <hr>
                                        <p>Address: ${venue_res.location.formattedAddress[0]}</p>
-                                       <p>City: ${venue_res.location.formattedAddress[1]}</p> 
+                                       <p>City: ${venue_res.location.formattedAddress[1]}</p>
                                        <hr>
-                                       <p>Category: ${venue_res.categories[0]["name"]}</p> 
+                                       <p>Category: ${venue_res.categories[0]["name"]}</p>
                                        <hr>
-                                       <p>Description: ${venue_res.description}</p>
-                    ` 
+                                       <p>Description: ${venue_res.description || "Unfortunately, description data is not available from FourSquare for this location."}</p>
+                    `
 
                     infowindow.setContent(infowindow_html);
 
@@ -341,7 +340,7 @@ function ViewModel() {
             </div>`);
 
             infowindow.open(map, marker);
-            
+
             infowindow.addListener('closeclick', function() {
                 infowindow.marker = null;
             });
@@ -357,7 +356,7 @@ function ViewModel() {
 
 
 
-// run app 
+// run app
 function initMap() {
     console.log("Running initMap");
     ko.applyBindings(new ViewModel());
